@@ -53,6 +53,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "8080:8080"
     env_file:
       - .env
     volumes:
@@ -62,6 +63,8 @@ services:
       - ./scripts/nginx-entrypoint.sh:/scripts/nginx-entrypoint.sh:ro
     depends_on:
       - new-api
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: ["/bin/sh", "/scripts/nginx-entrypoint.sh"]
     networks:
       - app-net
