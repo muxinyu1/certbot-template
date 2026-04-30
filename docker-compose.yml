@@ -29,4 +29,4 @@ services:
       - ./certbot/www:/var/www/certbot
       - ./certbot/conf:/etc/letsencrypt
       - ./scripts/certbot-loop.sh:/scripts/certbot-loop.sh:ro
-    command: ["/bin/sh", "/scripts/certbot-loop.sh"]
+    entrypoint: ["/bin/sh", "/scripts/certbot-loop.sh"]
