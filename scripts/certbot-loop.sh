@@ -24,6 +24,7 @@ while :; do
   if certbot certonly \
     --webroot \
     -w /var/www/certbot \
+    --cert-name "${DOMAIN}" \
     --agree-tos \
     --email "${CERTBOT_EMAIL}" \
     -d "${DOMAIN}" \

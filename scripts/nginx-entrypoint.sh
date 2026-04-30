@@ -26,10 +26,37 @@ render_nginx_conf() {
     /etc/nginx/templates/site.conf.template > /etc/nginx/conf.d/default.conf
 }
 
+resolve_le_cert_dir() {
+  best_dir=""
+  best_mtime=0
+
+  for d in "${le_cert_dir}" "/etc/letsencrypt/live/${DOMAIN}-"*; do
+    cert_file="${d}/fullchain.pem"
+    key_file="${d}/privkey.pem"
+
+    if [ ! -s "${cert_file}" ] || [ ! -s "${key_file}" ]; then
+      continue
+    fi
+
+    mtime=$(stat -c %Y "${cert_file}" 2>/dev/null || echo 0)
+    if [ "${mtime}" -ge "${best_mtime}" ]; then
+      best_mtime="${mtime}"
+      best_dir="${d}"
+    fi
+  done
+
+  if [ -n "${best_dir}" ]; then
+    echo "${best_dir}"
+    return 0
+  fi
+
+  return 1
+}
+
 link_active_cert() {
-  if [ -s "${le_cert_dir}/fullchain.pem" ] && [ -s "${le_cert_dir}/privkey.pem" ]; then
-    ln -sf "${le_cert_dir}/fullchain.pem" "${active_cert}"
-    ln -sf "${le_cert_dir}/privkey.pem" "${active_key}"
+  if selected_dir=$(resolve_le_cert_dir); then
+    ln -sf "${selected_dir}/fullchain.pem" "${active_cert}"
+    ln -sf "${selected_dir}/privkey.pem" "${active_key}"
     return 0
   fi
 
@@ -58,7 +85,7 @@ nginx -g 'daemon off;' &
 nginx_pid=$!
 
 while :; do
-  sleep 300
+  sleep 30
   link_active_cert >/dev/null 2>&1 || true
   render_nginx_conf
   nginx -s reload >/dev/null 2>&1 || true
