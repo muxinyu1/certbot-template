@@ -1,0 +1,32 @@
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: nginx-ssl-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    env_file:
+      - .env
+    volumes:
+      - ./nginx/templates:/etc/nginx/templates:ro
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+      - ./scripts/nginx-entrypoint.sh:/scripts/nginx-entrypoint.sh:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: ["/bin/sh", "/scripts/nginx-entrypoint.sh"]
+
+  certbot:
+    image: certbot/certbot:v2.11.0
+    container_name: certbot-renew
+    restart: unless-stopped
+    depends_on:
+      - nginx
+    env_file:
+      - .env
+    volumes:
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+      - ./scripts/certbot-loop.sh:/scripts/certbot-loop.sh:ro
+    command: ["/bin/sh", "/scripts/certbot-loop.sh"]
